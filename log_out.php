@@ -1,7 +1,11 @@
 <?php
-include_once 'inc_0700/config.php';
+/***
+ * log_out.php destroys the session to terminate access to the application
+ */
+include_once 'inc_0700/controller.php';
 session_destroy();
 $_SESSION = array();
+unset($household,$user);
 
 echo Page::header();
 
@@ -18,3 +22,4 @@ echo '
 	</div>
 	</body>
 	</html>';
+unset($GLOBALS['ROOT_PATH']);

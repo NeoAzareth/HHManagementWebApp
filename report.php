@@ -1,15 +1,19 @@
 <?php
-include_once 'inc_0700/config.php';
+/***
+ * report.php displays the forms necessary to create reports
+ */
+include_once 'inc_0700/controller.php';
 
-if(!(isset($_SESSION["user"])) && $_SESSION['user'] == NULL){
+if(!(isset($_SESSION["user"])) || $_SESSION['user'] == NULL
+		|| $household->getHhID() == NULL){
 	header('Location: index.php');
 }
 
 if (isset($_POST['get_custom'])){
-	$report = Validate::validateReportForm($_POST, $household);
+	$report = $household->processReportForm($_POST);
 } else {
 	$results = [];
-	$report = Validate::validateReportForm($results, $household);
+	$report = '';//Validate::validateReportForm($results, $household);
 }
 
 echo Page::header();
@@ -36,3 +40,4 @@ echo '</div>
 		</div>
 	</body>
 	</html>';
+unset($GLOBALS['ROOT_PATH']);

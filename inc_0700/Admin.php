@@ -1,158 +1,194 @@
 <?php
+/**
+ * Admin.php is a class that extends member objects to allow adminstration
+ * priviliges such as remove or allow users into a household, update the household rent, or reset
+ * the status of users
+ *
+ * @author Israel Santiago
+ * @package HHManageWebApp
+ * @see Member Class and User Class
+ * @version 3.0
+ *
+ */
 class Admin extends Member{
 	
-	function __construct($userID, $month, $pdo){
-		parent::__construct3($userID, $month, $pdo);	
+	/**
+	 * multiple php constructor
+	 */
+	function __construct(){
+		
+		$controller = new Connection();
+		$this->pdo = $controller->getConnection();
+		unset($controller);
+		//gets the arguments passed an stores them in the $a variable
+		$a = func_get_args();
+		
+		//counts the arguments passed an stores the number in the $i variable
+		//very important to name the other constructor with the number of
+		//arguments they take
+		$i = func_num_args();
+		
+		//calls the appropiate constructor based on the number of arguments
+		if (method_exists($this,$f='__construct'.$i)) {
+			call_user_func_array(array($this,$f),$a);
+		}
+	}
+	
+	
+	/**
+	 * Constructor with 2 parameters
+	 * 
+	 * @see Member::__construct2()
+	 */
+	function __construct2($userID, $pdo){
+		parent::__construct2($userID, $pdo);
 	}
 	
 	/**
-	 * validates the fields to add a new user and send the link on success
-	 * @param unknown $array, post array
-	 * @return String[], an array containing a result and the fields in case of failure
+	 * function that validates and removes users from a given household
+	 * @param array $postArray contains the ids of users to be removed
+	 * @param object $household, the household from wich the users need to be removed
+	 * @return string[]
 	 */
-	function sendRegistrationLink($array,$household) {
-	
-	
-		$first = $array['first'];
-		$last = $array['last'];
-		$email = $array['email'];
+	function removeUsers($postArray,$household){
 		$result = '';
-		//checks if any field is missing
-		if (empty($array['first']) || empty($array['last'] || empty($array['email']))){
-			$result = 'All fiels are required';
-		} else if (Validate::isEmailInUse($email)) {//checks if the email is in use
-			$result = 'That email is already in use...';
-		} else {
-	
-			//creates a unique code based on the first name, last name and email
-			$code = $first . $last . $email;
-			//hashes that code
-			$hashCode = md5($code);
-				
-			//prepares the email
-			$to  = $email;
-				
-			// subject
-			$subject = 'HH Registration link';
-				
-			// message
-			$message = '
-				<html>
-				<head>
-				  <title>Registration link</title>
-				</head>
-				<body>
-				  <h3>Hello '. $first.'!</h3>
-				  <p>Click the link and enter your info to register!</p>
-				  <a href="http://neoazareth.com/register.php?reg='.
-					  $hashCode .'" target="_blank">
-				  		Registration Link</a>
-				</body>
-				</html>
-			';
-					  	
-					  // To send HTML mail, the Content-type header must be set
-					  $headers  = 'MIME-Version: 1.0' . "\r\n";
-					  $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
-					  	
-					  // Additional headers
-					  //$headers .= 'To: '. $array['first'] .' <'. $email .'>' . "\r\n";
-					  //$headers .= 'From: '. $_SESSION['user']->getUserFirstName() . "\r\n";
-					  	
-					  //if sending the email is successful
-					  if (mail($to, $subject, $message, $headers)) {
-					  	$config = new Validate();
-					  	$pdo = $config->pdoConnection();
-					  	//prepares the hashed code for table insertion along with the
-					  	//household id for reference
-					  	$codeValid = $household->getHhID();
-					  	$insertCode =
-					  	$pdo->prepare('INSERT INTO sp16_codes
-				VALUES (NULL, :hash, :codevalid)');
-					  	//if the code is successfully inserted the admin is notified
-					  	if($insertCode->execute(array(':hash'=> $hashCode,
-					  			':codevalid'=> $codeValid))){
-					  			$result = 'Registration link successfully sent!';
-					  			$first ='';
-					  			$last ='';
-					  			$email ='';
-					  	} else {
-					  		$result = 'Failed to insert code...';
-					  	}
-					  } else {
-					  	$result = 'Something went wrong';
-					  }
-		}
-		$results = array('first'=>$first,'last'=>$last,'email'=>$email,'result'=>$result);
-		return $results;
-	}
-	
-	/***
-	 * Validate the delete user form,
-	 * @param string $array, expects the POST array
-	 * @return string[], an array that contains a string with feedback
-	 */
-	function deleteUsers($array, $household,$month){
-		$result='';
-		//retrieves a list of user ids that belong to the current household
 		$householdUserIDs = $household->listOfUserIDs();
-		$validUserID = [];
-		$usersDeleted = 0;
-	
-		//saves the valid ids into the valid user id array
-		foreach ($array as $key => $id){
-			//checks that the key has the "user" word and belongs to the current household
-			if(strpos($key, 'user')>= 0 && in_array($id, $householdUserIDs)){
-				array_push($validUserID, $id);
+		
+		$validUserIDs = [];
+		$usersRemoved = 0;
+		
+		foreach ($postArray as $key => $id){
+			if(strpos($key, 'user')>= 0 && in_array($id, $householdUserIDs)) {
+				array_push($validUserIDs, $id);
 			}
 		}
-		if(!(empty($validUserID))){
-			$config = new Validate();
-			$pdo = $config->pdoConnection();
-			foreach ($validUserID as $id){
-				$deleteUser =
-				$pdo->prepare("DELETE FROM sp16_users WHERE UserID = :id");
-				$deleteUser->execute(array(':id' => $id));
-				$usersDeleted++;
+		
+		if(!(empty($validUserIDs))){
+			$connection = new Connection();
+			$pdo = $connection->getConnection();
+			unset($connection);
+			
+			foreach ($validUserIDs as $id){
+				$removeUser = 
+				$pdo->prepare('UPDATE hhm_users 
+						SET UserStatus = "not in", HouseholdID = null 
+						WHERE UserID = :id');
+				$removeUser->execute(array('id'=>$id));
+				$usersRemoved++;
 			}
-			if ($usersDeleted == 1){
-				$result = $usersDeleted . ' user deleted';
+			if ($usersRemoved == 1){
+				$result = $usersRemoved . ' user removed';
 			} else {
-				$result = $usersDeleted . ' users were deleted';
+				$result = $usersRemoved . ' users were removed';
 			}
-			$household->getHouseholdMembers($pdo,$month);
+			
+			$household->getHouseholdMembers($pdo);
 		} else {
-			$result = 'There is nothing checked for deletion...';
+			$result = 'There is no user checked for removal...';
 		}
 		$results = array('result'=>$result);
 		return $results;
 	}
 	
 	/**
-	 * update the household rent on DB
-	 * @param double $amount, the new rent
-	 * @param object $pdo, pdo connection
+	 * function that updates the rent of a given household
+	 * @param int $amount
+	 * @param object $household
+	 * @return string
 	 */
-	function updateRentAmount($amount,$pdo,$household){
-		$id = $household->getHhID();
-	
-		$changeRent =
-		$pdo->prepare('UPDATE sp16_households
-				SET HhRentAmount = :amount
-				WHERE HouseholdID = :id
-				');
-		if($changeRent->execute(array(':amount'=> $amount ,':id'=> $id))){
-			$result = 'Rent has been updated';
-			$household->setHhRent($amount);
+	function updateRent($amount,$household){
+		if(Validate::isEmpty($amount)){
+			$result = 'Enter the new rent amount!';
+		} else if (!Validate::isValidAmount($amount)){
+			$result = 'Invalid rent amount, number must be greater than 0 or less 10,001';	
+		} else if($household->getHhRent() == $amount){
+			$result = 'Amount is the same...';
 		} else {
-			$result = 'Something went wrong';
+			$connection = new Connection();
+			$pdo = $connection->getConnection();
+			unset($connection);
+			$changeRent = 
+			$pdo->prepare('UPDATE hhm_households SET HhRentAmount = :amount
+					WHERE HouseholdID = :id');
+			
+			if($changeRent->execute(array('amount'=> $amount, 'id'=>$household->getHhID()))){
+				$result = 'Rent has been updated!';
+			} else {
+				$result = 'Something went wrong...';
+			}
+		}
+		$result = '<script>
+				alert("'. $result .'");
+				window.location.href="admin.php";
+				</script>';
+		return $result;
+	}
+	
+	/**
+	 * resets the user status of a given user id
+	 * @param object $household, used to verify that the user belongs to the household
+	 * @param int $resetID, user id to be reset
+	 * @return string|string,
+	 */
+	function resetUserStatus($household,$resetID){
+		$result = '';
+		$isValidID = false;
+		$isValidStatus = false;
+			
+		foreach ($household->getMembers() as $member){
+			if($member->getUserId() == $resetID){
+				$isValidID = true;
+				if($member->getUserStatus() == 'done'){
+					$isValidStatus = true;
+				}
+				break;
+			}
+		}
+			
+		if ($isValidID || $isValidStatus){
+			$tempUser = new Member($resetID);
+			$result = $tempUser->changeUserStatus('admin.php', 'not done');
+		} else {
+			$result = '<script>
+				alert("Invalid data!");
+				window.location.href="admin.php";
+				</script>';
 		}
 		return $result;
 	}
 	
-	function resetUserStatus($resetID){
-		$member = new Member($resetID);
-		$result = $member->changeUserStatus('admin.php', 'not done');
-		return $result;
+	/***
+	 * function that deletes a household from the database
+	 * it removes all users first
+	 * @param int $hhID, the household id to be removed
+	 * @return string
+	 */
+	function deleteHousehold($hhID){
+		$result = '<script>
+					alert("Something went wrong...");
+					</script>';
+		
+		$removeUsers = 
+		$this->pdo->prepare('
+				UPDATE hhm_users 
+				SET UserLevel = "member", 
+				UserStatus = "not in", 
+				HouseholdID = NULL 
+				WHERE HouseholdID =:hhID
+				');
+		if($removeUsers->execute(array('hhID'=>$hhID))){
+			$deleteHh = 
+			$this->pdo->prepare('DELETE FROM hhm_households 
+					WHERE HouseholdID =:hhID');
+			if($deleteHh->execute(array('hhID'=>$hhID))){
+				$_SESSION['user']['householdid'] = null;
+				$_SESSION['user']['userlevel'] = 'member';
+				header('Location: overview.php');
+			} else {
+				return $result;
+			}
+		} else {
+			return $result;
+		}
 	}
 }

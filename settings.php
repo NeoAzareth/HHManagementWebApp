@@ -1,48 +1,29 @@
 <?php
-include_once 'inc_0700/config.php';
+/***
+ * settings.php allows user to reset their password and leave or delete their current household
+ */
+include_once 'inc_0700/controller.php';
 
-if(!(isset($_SESSION["user"])) && $_SESSION['user'] == NULL){
+if(!(isset($_SESSION["user"])) || $_SESSION['user'] == NULL){
 	header('Location: index.php');
 }
 
-if(isset($_GET['editcontact']) && (int)($_GET['editcontact']) > 0){
-	$_SESSION['editcontact']= $_GET['editcontact'];
-} else if(isset($_POST['cancel'])){
-	$_SESSION['editcontact'] = 0;
-}
-
+$result = '';
 if(isset($_POST['updatepass'])){
-	$results = [];
-	$result = Validate::validateUpdatePassForm($_POST, $user);
+	$result = $user->updatePassword($_POST);
 	$form = Page::updatePasswordForm($result);
-	$form .= Page::notificationSettingsForm($results,$user);
-} else if (isset($_POST['update'])){
-	$result = '';
-	$results = Validate::validateUpdateContactInfo($_POST, $user);
+	$form .= Page::leaveOrDeleteForm($user, $household);
+} else if(isset($_POST['leaveHh'])) {
+	$result = $user->leaveHousehold();
 	$form = Page::updatePasswordForm($result);
-	$form .= Page::notificationSettingsForm($results,$user);
-} else if (isset($_POST['addoption'])){
-	$results = Validate::validateAddContacInfoForm($_POST, $user);
-	$result = '';
+	$form .= Page::leaveOrDeleteForm($user, $household);
+} else if(isset($_POST['deleteHh'])) {
+	$result = $user->deleteHousehold($household->getHhID());
 	$form = Page::updatePasswordForm($result);
-	$form .= Page::notificationSettingsForm($results,$user);
-	
-} else if (isset($_GET['delete']) && (int)($_GET['delete']) > 0){
-	$id = $_GET['delete'];
-	$results['result'] = Validate::validateDeleteContactOption($id, $user);
-	$result = '';
-	$form = Page::updatePasswordForm($result);
-	$form .= Page::notificationSettingsForm($results,$user);
-} else if (isset($_POST['setprimary'])){
-	$results = Validate::validateSetPrimary($_POST, $user);
-	$result = '';
-	$form = Page::updatePasswordForm($result);
-	$form .= Page::notificationSettingsForm($results,$user);
+	$form .= Page::leaveOrDeleteForm($user, $household);
 } else {
-	$results = [];
-	$result = '';
 	$form = Page::updatePasswordForm($result);
-	$form .= Page::notificationSettingsForm($results,$user);
+	$form .= Page::leaveOrDeleteForm($user, $household);
 }
 
 echo Page::header();
@@ -65,3 +46,4 @@ echo '</div>
 	</div>
 	</body>
 	</html>';
+unset($GLOBALS['ROOT_PATH']);
