@@ -1,14 +1,25 @@
 <?php
-include_once 'inc_0700/config.php';
+/***
+ * index.php is the main page of the application
+ * 
+ * it allows login/password reset and provides links to a register mock page
+ */
+//includes
+include_once 'inc_0700/controller.php';
 
-if (isset($_SESSION["user"]) && $_SESSION["user"] != NULL){
+//logic of the page
+if (isset($_SESSION["user"]) && $_SESSION["user"] != NULL){//redirects if a session is in place
 	header('Location: overview.php');
-} else if (isset($_POST['login'])){
-	$error = Validate::proccessLogin($_POST['un'], $_POST['pw']);
-} else {
+} else if (isset($_POST['login'])){//process login
+	$error = User::processLogin($_POST['em'], $_POST['pw']);
+} else if (isset($_POST['resetPass'])){//process password reset
+	echo User::proccessResetPassForm($_POST['passRe']);
+} else {//default view
+
 	$error = '';
 }
 
+//greets the user by name if a cookie exists
 if (isset($_COOKIE['name'])){
 	$greeting = '<div class="row">
 					<div class="col-lg-6 col-lg-offset-3">
@@ -35,5 +46,5 @@ echo '</div>
 	</body>
 	</html>';
 
-
+unset($GLOBALS['ROOT_PATH']);
 

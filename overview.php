@@ -1,8 +1,33 @@
 <?php
-include_once 'inc_0700/config.php';
+/***
+ * overview.php main page after login, provides different vies and info about the current household
+ * as well as the means to join or create a household if the user does not belong to a household
+ */
+//includes
+include_once 'inc_0700/controller.php';
 
-if(!(isset($_SESSION["user"]))&& $_SESSION['user'] == NULL){
+//validates access
+if(!(isset($_SESSION["user"])) || $_SESSION['user'] == NULL){
 	header('Location: index.php');
+}
+
+//logic
+if($user->getUserStatus() == 'not in') {//diplays join or create options if user not in household
+	$results = [];
+	if(isset($_POST['joinHh'])){//join household
+		$results = $user->joinHousehold($_POST);
+	} else if(isset($_POST['createHh'])){//create household
+		$results = $user->createHousehold($_POST);
+	}
+	$body = Page::createOrJoinOverview($user,$results);
+} else if ($user->getUserStatus() == 'pending'){//displays a message to noify of user pending status
+	if(isset($_POST['pending'])){//cancel pending status
+		$user->cancelPending();
+	}
+	$body = Page::cancelPendingOverview($user);
+	
+} else {//default view
+	$body = Page::defaultOverview($user, $household);
 }
 
 echo Page::header();
@@ -11,59 +36,5 @@ echo '<div class="container">';//open main container
 
 echo Page::navBar($user);
 
-echo ' 		<div class="row">
-			<div class="col-lg-6 col-lg-offset-3">
-							<h1 class="text-center">Overview page.</h1>
-			</div>
-		   	</div>
-
-			<!--2 divs open and close -->
-
-			<div class="row">
-			<div class="col-lg-10 col-lg-offset-1">
-				<h2>Hello <em class="text-primary">'. $user->getUserFullName().'</em>!</h2>
-			</div>
-			</div>
-
-			<!--2 divs open and close -->
-
-			<div class="row">
-			<div class="col-lg-10 col-lg-offset-1">
-			<h4> Welcome to <em class="text-success">'
-						. $household->getHhName(). '</em> overview page.</h4>
-			<h4> Rent as of '
-								. date('F jS\, Y') . ': <em class="text-danger">$' 
-										. $household->getHhRent().'</em></h4>
-			</div>
-			</div>
-			<!--2 divs open and close -->';
-
-echo '	<div class="row">
-			<div class="col-lg-5 col-lg-offset-1">
-			<h2 class="text-center">My bills</h2>';
-
-echo $user->displayUserBills();
-
-echo '		</div>
-			<div class="col-lg-5">
-		<h2 class="text-center">Member\'s Status</h2>';
-
-echo $household->showUsersStatus($user);
-
-echo '		</div>
-		</div>
-		<div class="row">
-			<div class="col-lg-10 col-lg-offset-1">';
-
-echo $household->expensesDistribution('current');
-
-echo '</div>
-	<div class="col-lg-10 col-lg-offset-1">';
-
-echo $household->expensesDistribution($pastMonth);
-		
-echo '	<div>
-	</div>
-	</div> <!--closes container -->
-	</body>
-	</html>';
+echo $body;
+unset($GLOBALS['ROOT_PATH']);

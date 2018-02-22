@@ -1,27 +1,18 @@
 <?php
-include_once 'inc_0700/config.php';
+/***
+ * register.php this page was buld as an excercise. It doesn't actually register and user!
+ */
 
-if(!(isset($_POST['register'])) && (!(isset($_GET['reg'])) || strlen($_GET['reg']) != 32)) {
-	echo '<script>
-		alert("Invalid data!");
-		window.location.href="index.php";
-		</script>';
-} else if (isset($_POST['register'])){
-	$array = Validate::validateNewMemberRegistrationForm($_POST);
-	$form = Page::displayNewMemberRegistrationForm($array);
+include_once 'inc_0700/controller.php';
+$results = array();
+
+if(isset($_POST['register'])){
+    $results = User::registerUser($_POST);
+    $form = Page::displayNewMemberRegistrationForm($results);
 } else {
-	$validator = new Validate();
-	if($validator->validateRegistrationCode($_GET['reg'])){
-		$array =[];
-		$form = Page::displayNewMemberRegistrationForm($array);;
-		unset($validator);
-	} else {
-		echo '<script>
-		alert("You are already registered");
-		window.location.href="index.php";
-		</script>';
-	}
+    $form = Page::displayNewMemberRegistrationForm($results);
 }
+
 
 echo Page::header();
 
@@ -43,3 +34,4 @@ echo '</div>
 		</div>
 	</body>
 	</html>';
+unset($GLOBALS['ROOT_PATH']);
