@@ -9,7 +9,7 @@ Link to deployed application https://neoazareth.com/HHManageWebApp/index.php
 GitHub link to android version: <br>
 https://github.com/NeoAzareth/HhManagementApp
 
-This web application is one of my first "big" projects. I was developed as an school assignment and it has been updated by me three times.
+This web application is one of my first "big" projects. It was developed as an school assignment and it has been updated by me three times.
 The first version was designed so that it would create the objects necessary to function at login and store those objects in the session
 so that all pages would be able to use them. It was fast but I was concerned with security issues and decided to recode it. 
 
@@ -17,15 +17,13 @@ The second revision of the app can be seen here in github. This version was more
 the previous this revision would create the objects every time a page is loaded. Thanks to this the app would be up to date with changes 
 done in the database by others users; although, at the cost of processing speed...
 
-The third revision (latest version) was re-coded after working on the android app. The intention was to be as close as possible with the 
-mobile app. It also ensures that it does the most of the things the mobile app does.
+The third revision (latest version) was re-coded after working on the android app. The intention was to make it work as close as possible with the mobile app. It also ensures that it does most of the things the mobile app does.
 
 Previously, this web app allowed users to receive email or text notifications; however, since the development of 
 the Android app that feature was removed.
 
 The mobile app and this web app share the same connection and database. The MobileApp folder contains all the scripts used by the
-mobile app. The scripts were originally less than the ones seen in the folder but I decided to separate them so that it would be easier to
-debug.
+mobile app. The scripts were originally less than the ones seen in the folder but I decided to separate them so that it would be easier to debug.
 
 Key features:
 
@@ -41,7 +39,7 @@ bills associated with them).
 9. Creates and emails all the users of a household a spreadsheet with the household report once all the users are done 
 adding bills.
 
-The application requires these programs to function credits to their work:
+The application requires these programs to function credits to their original work:
 
 PHPMailer and all their contributors. <br>
 https://github.com/PHPMailer/PHPMailer
